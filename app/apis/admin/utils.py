@@ -1,7 +1,10 @@
+import re
 import subprocess
 
 
 def get_disk_usage(parameters: str):
+    if not re.match(r"^[a-zA-Z0-9_\-./\\]+$", parameters):
+        raise ValueError("Invalid parameters")
     command = "df -h " + parameters
 
     try:
