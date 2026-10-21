@@ -29,7 +29,6 @@ async def get_current_user(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"verify_signature": VERIFY_SIGNATURE},
         )
         username: str = payload.get("sub")
         if username is None:
