@@ -7,6 +7,24 @@ from fastapi import APIRouter, status
 
 router = APIRouter()
 
+_SENSITIVE_MARKERS = (
+    "PASSWORD",
+    "PASSWD",
+    "SECRET",
+    "TOKEN",
+    "KEY",
+    "CREDENTIAL",
+    "AUTH",
+    "DATABASE_URL",
+    "DB_URL",
+    "DSN",
+)
+
+
+def _is_sensitive(name: str) -> bool:
+    upper = name.upper()
+    return any(marker in upper for marker in _SENSITIVE_MARKERS)
+
 
 @router.get("/debug", status_code=status.HTTP_200_OK)
 def get_debug_info_service():
@@ -19,7 +37,11 @@ def get_debug_info_service():
         "processor": platform.processor(),
     }
 
-    env_vars = dict(os.environ)
+    # Defense in depth: never return secret values, even to authorized callers.
+    env_vars = {
+        key: ("[REDACTED]" if _is_sensitive(key) else value)
+        for key, value in os.environ.items()
+    }
     local_paths = {
         "current_working_directory": os.getcwd(),
         "sys_path": sys.path,
