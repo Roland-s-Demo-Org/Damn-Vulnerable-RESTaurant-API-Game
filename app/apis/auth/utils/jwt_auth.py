@@ -10,7 +10,6 @@ from typing_extensions import Annotated
 
 SECRET_KEY = Settings.JWT_SECRET_KEY
 ALGORITHM = "HS256"
-VERIFY_SIGNATURE = False
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -29,10 +28,10 @@ async def get_current_user(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={"verify_signature": VERIFY_SIGNATURE},
+            options={"require_sub": True, "require_exp": True},
         )
-        username: str = payload.get("sub")
-        if username is None:
+        username = payload.get("sub")
+        if not isinstance(username, str) or not username:
             raise credentials_exception
         token_data = TokenData(username=username)
     except JWTError:
