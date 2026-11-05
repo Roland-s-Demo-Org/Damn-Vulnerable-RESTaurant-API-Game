@@ -7,6 +7,31 @@ from fastapi import APIRouter, status
 
 router = APIRouter()
 
+_REDACTED = "***REDACTED***"
+_SENSITIVE_KEY_MARKERS = (
+    "SECRET",
+    "PASSWORD",
+    "PASSWD",
+    "TOKEN",
+    "KEY",
+    "CREDENTIAL",
+    "AUTH",
+    "DATABASE_URL",
+    "DB_URL",
+    "_URI",
+    "_DSN",
+)
+
+
+def _redact_env_value(key: str, value: str) -> str:
+    upper_key = key.upper()
+    if any(marker in upper_key for marker in _SENSITIVE_KEY_MARKERS):
+        return _REDACTED
+    # Redact values that embed credentials, e.g. scheme://user:password@host
+    if "://" in value and "@" in value:
+        return _REDACTED
+    return value
+
 
 @router.get("/debug", status_code=status.HTTP_200_OK)
 def get_debug_info_service():
@@ -19,7 +44,7 @@ def get_debug_info_service():
         "processor": platform.processor(),
     }
 
-    env_vars = dict(os.environ)
+    env_vars = {key: _redact_env_value(key, value) for key, value in os.environ.items()}
     local_paths = {
         "current_working_directory": os.getcwd(),
         "sys_path": sys.path,
