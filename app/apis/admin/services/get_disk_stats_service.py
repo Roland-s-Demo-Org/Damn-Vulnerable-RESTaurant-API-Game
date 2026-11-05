@@ -1,5 +1,5 @@
 from apis.admin.schemas import DiskUsage
-from apis.admin.utils import get_disk_usage
+from apis.admin.utils import InvalidDiskUsageParameters, get_disk_usage
 from apis.auth.utils import get_current_user
 from db.models import User, UserRole
 from db.session import get_db
@@ -23,5 +23,8 @@ def get_disk_usage_stats(
             status_code=403, detail="Only Chef is authorized to get current disk stats!"
         )
 
-    usage = get_disk_usage(parameters)
+    try:
+        usage = get_disk_usage(parameters)
+    except InvalidDiskUsageParameters as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return DiskUsage(output=usage)
